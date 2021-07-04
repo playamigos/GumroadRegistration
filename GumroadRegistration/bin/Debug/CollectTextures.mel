@@ -1,0 +1,1530 @@
+LoadAssetManager();
+
+global proc LoadAssetManager()
+{
+    global string $amDocker;    
+    global string $amScroll;
+    global string $amColumnLayout;
+    global string $amFrameLayout;
+    global string $amGridScroll;
+    global string $amGridLayout;
+    global string $amToggleRow;
+
+    global string $amLibDropDown;
+    global string $amPathRowLayout;
+    global string $amIconSizeSlider;
+    global string $amSelectionCountText;
+    global string $amOffsetsParent;
+    global string $amRandomsParent;
+    global string $amSearchField;
+
+    global string $tmpString;
+
+    
+    global int $amsSpawnType;
+    global int $amsIconSize;
+    global string $amsCurrentLibPath;
+    global string $amsCurrentPath;
+    global string $amsScriptRootPath;
+    global int $amsSelectionList[];
+    global string $amsLibNames[];
+    global string $amsLibPaths[];
+
+    
+    LoadStateParams();
+    CheckLibrary_H();
+
+    if(`columnLayout -ex $amColumnLayout`)
+    {
+        deleteUI -layout $amColumnLayout;
+    }
+    else
+    {
+        window -sizeable 1 "amWindow"; 
+        $amScroll = `scrollLayout -p "amWindow" -horizontalScrollBarThickness 16 -verticalScrollBarThickness 16 -cr true -rc "RefreshUISizes"`;
+        $amDocker = `dockControl -ret false -area "left" -content "amWindow" -label "Asset Manager" -allowedArea "all" amDocker`;
+    }
+
+    $amColumnLayout = `columnLayout -p $amScroll -columnAttach "both" 5 -rowSpacing 3 -columnWidth 450 -adj true`;
+    
+    rowLayout -nc 2 -adj 1 -p $amColumnLayout;
+    $amLibDropDown = `optionMenu -label "Lib:" -h 20 -changeCommand "LibChanged"`;
+    string $mi;
+    for ($mi in $amsLibNames)
+    {
+        menuItem -label $mi -p $amLibDropDown;
+    }
+    button -label "Configure" -command "LoadLibraryManager" -w 60 -h 20 -bgc 0 0.5 0;
+    SetCurrentLib();
+
+    separator -p $amColumnLayout  -style "out";
+
+    $amToggleRow = `rowLayout -nc 3 -p $amColumnLayout`;
+    button -label "Instance" -command "SpawnTypeChanged 0" -w 90 -bgc 0.2 0.5 0.2;
+    button -label "Reference" -command "SpawnTypeChanged 1" -w 90 -bgc 0.33 0.33 0.33;
+    button -label "Import" -command "SpawnTypeChanged 2" -w 90 -bgc 0.33 0.33 0.33;
+
+    SetCurrentSpawnType;
+
+    $amFrameLayout = `frameLayout -label "Spawn Parameters"  -collapsable true -collapse true -p $amColumnLayout -cc "RefreshUISizes"`;
+    $tmpString = `columnLayout -p $amFrameLayout -columnAttach "both" 0 -adj true`;
+    
+    rowLayout -nc 5 -adj 1 -p $tmpString;
+    
+    text -label "----------->" -al "left" -w 50;
+    text -label "Tx" -al "center" -w 50;
+    text -label "Tz" -al "center" -w 50;
+    text -label "Ry" -al "center" -w 50;
+    text -label "S" -al "center" -w 50;
+    
+    $amOffsetsParent = `rowLayout -nc 5 -adj 1 -p $tmpString`;
+    text -label "Offsets:" -al "left" -w 50;
+    floatField  -v 0.0 -pre 2 -s 0.1 -w 50 -bgc 0.3 0.3 0;
+    floatField  -v 0.0 -pre 2 -s 0.1 -w 50 -bgc 0.3 0.3 0;
+    floatField  -v 0.0 -pre 2 -s 0.1 -w 50 -bgc 0.3 0.3 0;
+    floatField  -v 0.0 -pre 2 -s 0.1 -w 50 -bgc 0.3 0.3 0;
+
+    $amRandomsParent = `rowLayout -nc 5 -adj 1 -p $tmpString`;
+    text -label "Random:" -al "left" -w 50;
+    floatField  -v 0.0 -pre 2 -s 0.1 -w 50 -bgc 0 0.3 0.3;
+    floatField  -v 0.0 -pre 2 -s 0.1 -w 50 -bgc 0 0.3 0.3;
+    floatField  -v 0.0 -pre 2 -s 0.1 -w 50 -bgc 0 0.3 0.3;
+    floatField  -v 0.0 -pre 2 -s 0.1 -w 50 -bgc 0 0.3 0.3;
+
+    separator -p $amColumnLayout  -style "out";
+
+    $tmpString = `rowLayout -nc 3 -adj 3 -p $amColumnLayout`;
+    symbolButton  -image ($amsScriptRootPath + "\\Icons\\home.png") -command "GotoHomeDir" -w 30 -h 25 -bgc 0 0.4 0;
+    symbolButton  -image ($amsScriptRootPath + "\\Icons\\up.png") -command "GoUpDir" -w 25 -h 25  -bgc 0.1 0.1 0.1;
+    $amPathRowLayout = `rowLayout -nc 6 -p $tmpString -bgc 0.4 0.4 0.4`;
+    text -label ">" -p  $amPathRowLayout;
+    button -label "Foldwer1" -command "" -bgc 0.2 0.2 0.2 -p  $amPathRowLayout;
+    text -label ">" -p  $amPathRowLayout;
+    button -label "Foweler2" -command "" -bgc 0.2 0.2 0.2 -p  $amPathRowLayout;
+    text -label ">" -p  $amPathRowLayout;
+    button -label "Folweer3" -command "" -bgc 0.2 0.2 0.2 -p $amPathRowLayout;
+
+    rowLayout -nc 2 -adj 2 -p $amColumnLayout;
+    symbolButton  -image ($amsScriptRootPath + "\\Icons\\search.png") -command "" -w 25 -h 25;
+    $amSearchField = `textField  -aie true -enterCommand "ShowSearchResults" -ann "Search field" -h 25`;
+
+    
+
+    
+    
+    $amGridScroll = `scrollLayout -p $amColumnLayout -horizontalScrollBarThickness 16 -verticalScrollBarThickness 16 -cr true -bgc 0.2 0.2 0.2`;
+    $amGridLayout = `gridLayout -parent $amGridScroll -cwh 50 50 -cr true -aec false -ag true`;
+
+    rowLayout -nc 4 -p $amColumnLayout -adj 3 -ct4 "left" "left" "left" "left" -co4 0 1 6 6  ;
+    $amSelectionCountText = `text -label "5" -al "center" -w 25 -h 25 -bgc 0.1 0.3 0.4`;
+    button -label "Clear" -command "ClearSelection" -bgc 0.3 0.1 0.1 -w 65 -h 25;
+    $amIconSizeSlider = `intSlider -min 30 -max 300 -value 80 -step 10 -dc "IconSizeChanged"`;
+    symbolButton  -image ($amsScriptRootPath + "\\Icons\\plus.png") -command "LoadAssetEditor" -w 25 -h 25 -bgc 0 0.5 0;
+    SetCurrentIconSize();
+
+    RefreshFilesList();
+    RefreshUISizes();
+}
+
+
+
+
+
+
+
+
+global proc LoadLibraryManager()
+{
+    global string $amLibColumnLayout;
+    global string  $amsScriptRootPath;
+    global string $amsLibNames[];
+    global string $amsLibPaths[];
+    global string $amLibNameInput;
+    global string $amLibPathInput;
+
+    if(`columnLayout -ex $amLibColumnLayout`)
+        deleteUI -layout $amLibColumnLayout;
+    else
+        window -w 400 -h 400 -title "Library Manager" "amLibWindow"; 
+    
+
+    $amLibColumnLayout = `columnLayout -p "amLibWindow" -columnAttach "both" 5 -rowSpacing 3 -columnWidth 400 -adj true`;
+    rowLayout -nc 2 -adj 2 -p $amLibColumnLayout;
+    text -label "Library Name:" -al "left" -w 80 -h 25;    
+    $amLibNameInput = `textField -h 25`;
+
+    rowLayout -nc 2 -adj 2 -p $amLibColumnLayout;
+    text -label "Library Path:" -al "left" -w 80 -h 25;    
+    $amLibPathInput = `textField -h 25`;
+
+    button -label "Add Library" -command "AddLib" -bgc 0 0.5 0 -p $amLibColumnLayout;
+    
+    separator -p $amLibColumnLayout  -style "out";
+
+    string $amLidScroll = `scrollLayout -p $amLibColumnLayout -horizontalScrollBarThickness 16 -verticalScrollBarThickness 16 -cr true -h 300`;
+    string $amLibScrollColumn = `columnLayout -p $amLidScroll -columnAttach "both" 5 -rowSpacing 3 -adj true -columnWidth 200 -bgc 0.2 0.2 0.2`;
+    
+    int $i = 0;
+    while($i < size($amsLibNames))
+    {
+        string $tmp1 = `separator -p $amLibScrollColumn`;
+        string $tmp2 = `rowLayout -nc 4 -p $amLibScrollColumn`;
+        text -label ($amsLibNames[$i]) -al "left" -fn "boldLabelFont" -w 120 -h 20; 
+        text -label (">>"+$amsLibPaths[$i]) -al "left" -fn "plainLabelFont" -ww true -w 185; 
+        string $arg = "\"" +encodeString(strip($amsLibPaths[$i]))+ "\"" + " " + "\"" + encodeString(strip($tmp1)) + "\"" + " " + "\"" + encodeString(strip($tmp2)) + "\"";
+        
+        button -label "Remove" -w 45 -h 25 -command ("RemoveLib " + $arg) -bgc 0.5 0 0;
+        $i = $i + 1;
+    }
+    showWindow "amLibWindow";
+}
+
+global proc LoadAssetEditor()
+{
+    global string $amEditColumnLayout;
+    global string  $amsScriptRootPath;
+    global string $amEditImageInput;
+    global string $amEditTagInput;
+
+    if(`columnLayout -ex $amEditColumnLayout`)
+        deleteUI -layout $amEditColumnLayout;
+    else
+        window -w 310 -h 600 -s false -title "Asset Editor" "amEditWindow"; 
+
+    
+    if(substring($amsScriptRootPath,10,10)!="v")
+        return
+    
+
+    $amEditColumnLayout = `columnLayout -p "amEditWindow" -columnAttach "both" 5 -rowSpacing 3 -columnWidth 300 -adj true`;
+
+    separator -p $amEditColumnLayout  -style "out";
+    text -label "Thumbnail" -al "center" -p $amEditColumnLayout;
+    
+    rowLayout -nc 3 -p $amEditColumnLayout;
+    text -l "~" -al "center" -w 22 -h 300;
+    $amEditImageInput = `image -i "" -w 256-h 256 -bgc 0.2 0.2 0.2`;
+    text -l "~" -al "center" -w 22 -h 300;
+
+    button -label "Capture Image" -bgc 0.2 0.2 0.5 -h 30 -c "CaptureThumbnail" -p $amEditColumnLayout;
+    
+    separator -p $amEditColumnLayout  -style "out";
+    text -label "Add Tags" -al "center" -p $amEditColumnLayout;
+
+    $amEditTagInput = `scrollField -wordWrap true -editable true -h 100 -p $amEditColumnLayout`;
+
+    separator -p $amEditColumnLayout -h 20  -style "out";
+    text -label "Cleanup Asset Before saving" -al "center" -p $amEditColumnLayout;
+    separator -p $amEditColumnLayout -h 20  -style "out";
+    button -label "Export Selected" -h 40 -bgc 0 0.5 0 -c "ExportSelected" -p $amEditColumnLayout;
+    separator -p $amEditColumnLayout -h 20 -style "out";
+
+    showWindow "amEditWindow";
+}
+global proc ModifyAssetEditor(string $filePath)
+{
+    global string $amEditColumnLayout;
+    global string  $amsScriptRootPath;
+    global string $amEditImageInput;
+    global string $amEditTagInput;
+
+    if(`columnLayout -ex $amEditColumnLayout`)
+        deleteUI -layout $amEditColumnLayout;
+    else
+        window -w 310 -h 600 -s false -title "Asset Editor" "amEditWindow"; 
+
+    string $imgPath = dirname($filePath) + "\\.mayaSwatches\\" + basename($filePath, "" ) + ".swatch";
+    string $tagPath = dirname($filePath) + "\\.amtags\\" + basename($filePath, "" ) + ".tag";
+    
+
+    $amEditColumnLayout = `columnLayout -p "amEditWindow" -columnAttach "both" 5 -rowSpacing 3 -columnWidth 300 -adj true`;
+
+    separator -p $amEditColumnLayout  -style "out";
+    text -label "Thumbnail" -al "center" -p $amEditColumnLayout;
+    
+    rowLayout -nc 3 -p $amEditColumnLayout;
+    text -l "~" -al "center" -w 22 -h 300;
+    if(`filetest -f $imgPath`)
+        $amEditImageInput = `image -i $imgPath -w 256-h 256 -bgc 0.2 0.2 0.2`;
+    else
+        $amEditImageInput = `image -i "" -w 256-h 256 -bgc 0.2 0.2 0.2`;
+    text -l "~" -al "center" -w 22 -h 300;
+
+    button -label "Capture Image" -bgc 0.2 0.2 0.5 -h 30 -c "CaptureThumbnail" -p $amEditColumnLayout;
+    
+    separator -p $amEditColumnLayout  -style "out";
+    text -label "Add Tags" -al "center" -p $amEditColumnLayout;
+
+    if(`filetest -f $tagPath`)
+    {
+        int $fileId = `fopen $tagPath "r"`;
+        string $line1 = `fgetline $fileId`;
+        $amEditTagInput = `scrollField -wordWrap true -text $line1 -editable true -h 100 -p $amEditColumnLayout`;
+        
+        fclose $fileId ;
+    }    
+    else
+    {
+        $amEditTagInput = `scrollField -wordWrap true -editable true -h 100 -p $amEditColumnLayout`;
+    }
+        
+    separator -p $amEditColumnLayout -h 20  -style "out";
+    text -label "Cleanup Asset Before saving" -al "center" -p $amEditColumnLayout;
+    separator -p $amEditColumnLayout -h 20  -style "out";
+    button -label "Save changes" -h 40 -bgc 0 0.5 0 -c ("ModifyAsset " + "\""+ encodeString($filePath) + "\"") -p $amEditColumnLayout;
+    separator -p $amEditColumnLayout -h 20 -style "out";
+
+    showWindow "amEditWindow";
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+global proc CaptureThumbnail()
+{    
+    global string $amsScriptRootPath;
+    global string $amEditImageInput;
+    
+    float $cTime = `currentTime -query`;
+    playblast -frame $cTime  -format image -cf ($amsScriptRootPath + "\\Data\\Thumb.iff") -forceOverwrite  -sequenceTime 0 -clearCache 1 -viewer 0 -showOrnaments 0 -offScreen  -fp 4 -percent 100 -compression "maya" -quality 100 -widthHeight 256 256;
+    image -e -i ($amsScriptRootPath + "\\Data\\Thumb.iff") $amEditImageInput;
+}
+
+global proc ExportSelected()
+{
+    global string $amEditImageInput;
+    global string $amEditTagInput;
+    global string $amsCurrentLibPath;
+    string $filePath[];
+
+    string $filters = "Maya ASCII (*.ma);;Maya Binary (*.mb);;";
+    $filePath = `fileDialog2 -fm 0 -fileFilter $filters -ds 2 -okc "Export"`;
+    
+    string $ext = fileExtension($filePath[0]);
+    
+    if($ext == "mb")
+        file -force -options "v=0;" -typ "mayaBinary" -pr -es ($filePath[0]);
+    else
+        file -force -options "v=0;" -typ "mayaAscii" -pr -es ($filePath[0]);
+    
+    string $oldImgPath = `image -q -i $amEditImageInput`;
+    if($oldImgPath != "" && `filetest -f $oldImgPath`)
+    {
+        string $swatchFolder = dirname($filePath[0]) + "\\.mayaSwatches";
+        sysFile -md $swatchFolder;
+        string $newImgPath = $swatchFolder + "\\" + basename($filePath[0], "" ) + ".swatch";
+        sysFile -rename $newImgPath $oldImgPath;
+    }
+
+    
+    global string $amsScriptRootPath;
+    if(substring($amsScriptRootPath,10,10)!="v")
+        return
+
+    string $searchFolder = $amsCurrentLibPath + "\\.tags";
+    if(!`filetest -d $searchFolder`)
+        sysFile -md $searchFolder;
+    string $tagData = `scrollField -q -text $amEditTagInput`;
+    $tagData = tolower($tagData);
+    string $tags[];
+    $numTags = `tokenize $tagData " ,.@#*/'|][<>?\\()!$%_+-" $tags`;
+    if($numTags==1 && $tags[0] == "")
+    {
+        deleteUI -window "amEditWindow";
+        return;
+    }
+    string $tag;
+    string $tagPath;
+    for($tag in $tags)
+    {
+        $tagPath = $searchFolder + "\\" + $tag;
+        if(`filetest -f $tagPath`)
+        {            
+            int $fileId = `fopen $tagPath "a"`;
+            fprint $fileId ("\n"+$filePath[0]);
+            fclose $fileId;
+        }
+        else
+        {
+            int $fileId = `fopen $tagPath "w"`;
+            fprint $fileId $filePath[0];
+            fclose $fileId;
+        }
+    }
+
+    string $allTags = stringArrayToString($tags, ",");
+    string $selfTagFolder = dirname($filePath[0]) + "\\.amtags";
+    if(!`filetest -d $selfTagFolder`)
+        sysFile -md $selfTagFolder;
+    string $selfTagPath = dirname($filePath[0]) + "\\.amtags\\"+basename($filePath[0], "" ) + ".tag";       
+    int $fileId = `fopen $tagPath "w"`;
+    fprint $fileId $filePath[0];
+    fclose $fileId;
+
+    deleteUI -window "amEditWindow";
+}
+
+global proc ModifyAsset(string $filePath)
+{
+    global string $amEditImageInput;
+    global string $amEditTagInput;
+    global string $amsCurrentLibPath;
+
+    
+    string $ext = fileExtension($filePath);
+    
+    
+    global string $amsScriptRootPath;
+    if(substring($amsScriptRootPath,10,10)!="v")
+        return
+    
+    string $oldImgPath = `image -q -i $amEditImageInput`;
+    if($oldImgPath != "" && `filetest -f $oldImgPath`)
+    {
+        string $swatchFolder = dirname($filePath) + "\\.mayaSwatches";
+        sysFile -md $swatchFolder;
+        string $newImgPath = $swatchFolder + "\\" + basename($filePath, "" ) + ".swatch";
+        sysFile -rename $newImgPath $oldImgPath;
+    }
+
+    
+    string $searchFolder = $amsCurrentLibPath + "\\.tags";
+    if(!`filetest -d $searchFolder`)
+        sysFile -md $searchFolder;
+    string $tagData = `scrollField -q -text $amEditTagInput`;
+    $tagData = tolower($tagData);
+    string $tags[];
+    $numTags = `tokenize $tagData " ,.@#*/'|][<>?\\()!$%_+-" $tags`;
+    if($numTags==1 && $tags[0] == "")
+    {
+        clear $tags;
+    }
+    
+    string $tagPath = dirname($filePath) + "\\.amtags\\" + basename($filePath, "" ) + ".tag";
+    string $oldTags[];
+    if(`filetest -f $tagPath`)
+    {
+        int $fileId = `fopen $tagPath "r"`;
+        string $line1 = `fgetline $fileId`;
+        $numTags = `tokenize $line1 " ,.@#*/'|][<>?\\()!$%_+-" $oldTags`;
+        if($numTags==1 && $oldTags[0] == "")
+        {
+           clear $oldTags;
+        }
+        fclose $fileId ;
+    }
+
+    string $tagsToAdd[];
+    string $tagsToRemove[];
+    $tagsToAdd = stringArrayRemove($oldTags, $tags);
+    $tagsToRemove = stringArrayRemove($tags, $oldTags);
+
+    string $tag;
+    for($tag in $tagsToAdd)
+    {
+        $tagPath = $searchFolder + "\\" + $tag;
+        if(`filetest -f $tagPath`)
+        {            
+            int $fileId = `fopen $tagPath "a"`;
+            fprint $fileId ("\n"+$filePath);
+            fclose $fileId;
+        }
+        else
+        {
+            int $fileId = `fopen $tagPath "w"`;
+            fprint $fileId $filePath;
+            fclose $fileId;
+        }
+    }
+    for($tag in $tagsToRemove)
+    {
+        $tagPath = $searchFolder + "\\" + $tag;
+        if(`filetest -f $tagPath`)
+        {            
+            int $fileId = `fopen $tagPath "r"`;
+            string $line = `fgetline $fileId`;
+            $line = strip($line);
+            string $tmpPaths[];
+            while($line != "")
+            {
+                if($line != $filePath)
+                    $tmpPaths[size($tmpPaths)] = $line;
+                $line = `fgetline $fileId`;
+                $line = strip($line);
+            }
+            fclose $fileId;
+            if(size($tmpPaths) == 0 || $tmpPaths[0]=="")
+            {
+                sysFile -delete (encodeString($tagPath));
+            }
+            else
+            {
+                string $data = stringArrayToString($tmpPaths, "\n");
+                $fileId = `fopen $tagPath "w"`;
+                fprint $fileId $data;
+                fclose $fileId;
+            }
+        }
+    }
+
+    string $allTags = stringArrayToString($tags, ",");
+    string $selfTagFolder = dirname($filePath) + "\\.amtags";
+    if(!`filetest -d $selfTagFolder`)
+        sysFile -md $selfTagFolder;
+    string $selfTagPath = dirname($filePath) + "\\.amtags\\"+basename($filePath, "" ) + ".tag";       
+    int $fileId = `fopen $selfTagPath "w"`;
+    fprint $fileId $allTags;
+    fclose $fileId;
+
+    deleteUI -window "amEditWindow";
+    print "Refresh to see changes";
+}
+
+global proc SpawnTypeChanged(int $newType)
+{
+    global int $amsSpawnType;
+    global string $amToggleRow;
+    
+    $amsSpawnType = $newType;
+
+    string $children[] = `rowLayout -q -ca $amToggleRow`;
+
+    int $i = 0;
+    while($i < 3)
+    {
+        if($newType == $i)
+            button -e -bgc 0.2 0.5 0.2 ($children[$i]);
+        else            
+            button -e -bgc 0.33 0.33 0.33 ($children[$i]);
+        $i = $i + 1;
+    }
+    SaveState();
+}
+global proc SetCurrentSpawnType()
+{
+    global int $amsSpawnType;
+    global string $amToggleRow;
+
+    string $children[] = `rowLayout -q -ca $amToggleRow`;
+
+    int $i = 0;
+    while($i < 3)
+    {
+        if($amsSpawnType == $i)
+            button -e -bgc 0.2 0.5 0.2 ($children[$i]);
+        else            
+            button -e -bgc 0.33 0.33 0.33 ($children[$i]);
+        $i = $i + 1;
+    }
+}
+
+global proc IconSizeChanged()
+{
+    global string $amIconSizeSlider;
+    global int $amsIconSize;
+    $amsIconSize = `intSlider -q -value $amIconSizeSlider`;
+    SaveState();
+    RefreshIconSizes();
+}
+
+global proc SetCurrentIconSize()
+{
+    global string $amIconSizeSlider;
+    global int $amsIconSize;
+
+    intSlider -e -value $amsIconSize $amIconSizeSlider;
+}
+
+global proc LibChanged()
+{
+    global string $amLibDropDown;
+    global string $amsCurrentLibPath;
+    global string $amsCurrentPath;
+    global string $amsLibPaths[];
+    int $idx = `optionMenu -q -sl $amLibDropDown`;
+    print $idx;
+    print $amsLibPaths;
+    if($idx >= 1)
+    {
+        $amsCurrentLibPath = $amsLibPaths[$idx-1];
+        $amsCurrentPath = $amsCurrentLibPath;
+        SaveState();
+    }
+    RefreshFilesList();
+}
+
+
+global proc SetCurrentLib()
+{
+    global string $amLibDropDown;
+    global string $amsCurrentLibPath;
+    global string $amsCurrentPath;
+    global string $amsLibPaths[];
+
+    if(size($amsLibPaths) > 0)
+    {
+        int $idx = stringArrayFind( $amsCurrentLibPath , 0, $amsLibPaths );
+        if($amsCurrentLibPath == "" || $idx == -1)
+        {
+            optionMenu -e -sl 1 $amLibDropDown;
+            $amsCurrentLibPath = $amsLibPaths[0];
+        }
+        else
+        {
+            optionMenu -e -sl ($idx+1) $amLibDropDown;
+        }
+    }
+    else
+    {
+        $amsCurrentLibPath = "";
+    }
+    $amsCurrentPath = $amsCurrentLibPath;
+}
+
+global proc RemoveLib(string $path, string $ele1, string $ele2)
+{       
+    global string $amsLibNames[];
+    global string $amsLibPaths[];
+
+    deleteUI -control $ele1;
+    deleteUI -control $ele2;
+
+    int $index = stringArrayFind( $path, 0, $amsLibPaths);
+    stringArrayRemoveAtIndex($index, $amsLibNames);
+    stringArrayRemoveAtIndex($index, $amsLibPaths);
+    SaveLibs();
+    LoadAssetManager();
+}
+
+global proc AddLib()
+{
+    global string $amsLibNames[];
+    global string $amsLibPaths[];
+    global string $amsCurrentLibPath;
+    global string $amLibNameInput;
+    global string $amLibPathInput;
+    
+    global string $amsLocation;
+    global string $amsTest1;
+    global string $amsTest2;
+    global string $amsTest3;
+    global string $amsSample1;
+    
+    if(`textField -ex $amLibNameInput` && `textField -ex $amLibPathInput`)
+    {
+        string $name = `textField -q -text $amLibNameInput`;
+        string $path = `textField -q -text $amLibPathInput`;
+        
+        if(!`filetest -d ($amsLocation+ "\\." +$amsTest1 + "\\" + $amsSample1 + "\\."+$amsTest2 )`)
+            return;
+        if(strip($name) != "" && strip($path) != "")
+        {
+            int $idx = size($amsLibNames);
+            $amsLibNames[$idx] = strip($name);
+            $amsLibPaths[$idx] = strip($path);
+            $amsCurrentLibPath = strip($path);
+            
+            SaveState();
+            SaveLibs();
+            LoadLibraryManager();
+            LoadAssetManager();
+        }
+    }
+}
+
+global proc ChangeCurrentPath(string $path)
+{
+    global string $amsCurrentPath;
+    $amsCurrentPath = $path;
+    RefreshFilesList();
+}
+global proc GotoHomeDir()
+{
+    global string $amsCurrentPath;
+    global string $amsCurrentLibPath;
+    $amsCurrentPath = $amsCurrentLibPath;
+    RefreshFilesList();
+}
+global proc GoUpDir()
+{
+    global string $amsCurrentPath;
+    global string $amsCurrentLibPath;
+    string $tmpPath = dirname($amsCurrentPath);
+    if(size($amsCurrentLibPath) < size($amsCurrentPath))
+        $amsCurrentPath = $tmpPath;
+    RefreshFilesList();
+}
+global proc string GetRandomSelectedAssetPath()
+{
+    global int $amsSelectionList[];
+    global string $amGridLayout;
+    int $randID;
+    string $output;
+    
+    
+    global string $amsScriptRootPath;
+    if(substring($amsScriptRootPath,10,10)!="v")
+        return
+
+    string $children[] = `gridLayout -q -ca $amGridLayout`;
+    
+    if(size($amsSelectionList) > 0)
+    {        
+        $randID = rand(0,size($amsSelectionList));
+        $output = `columnLayout -q -ann ($children[$amsSelectionList[$randID]])`;
+        string $ext = fileExtension($output);
+        if($ext == "ma" || $ext == "mb")
+            return $output;
+        else
+            return "";
+    }
+    return "";
+}
+
+
+global proc AddObjectsToScene()
+{ 
+    global int $amsSpawnType;
+    global float $placerTx,$placerTy,$placerTz;
+    global string $amOffsetsParent;
+    global string $amRandomsParent;
+
+    
+    global string $amsLocation;
+    global string $amsTest1;
+    global string $amsTest2;
+    global string $amsTest3;
+    global string $amsSample1;
+    
+    
+    global string $amsScriptRootPath;
+    if(substring($amsScriptRootPath,10,10)!="v")
+        return;
+
+    
+    float $oTx,$oTz,$oRy,$oS,$rTx,$rTz,$rRy,$rS;
+
+    string $c[] = `rowLayout -q -ca $amOffsetsParent`;
+    $oTx = `floatField -q -v $c[1]`;
+    $oTz = `floatField -q -v $c[2]`;
+    $oRy = `floatField -q -v $c[3]`;
+    $oS = `floatField -q -v $c[4]`;
+
+    clear $c;
+    $c = `rowLayout -q -ca $amRandomsParent`;
+    $rTx = `floatField -q -v $c[1]`;
+    $rTz = `floatField -q -v $c[2]`;
+    $rRy = `floatField -q -v $c[3]`;
+    $rS = `floatField -q -v $c[4]`;
+
+    $rTx = rand(0,$rTx) - $rTx/2;
+    $rTz = rand(0,$rTz) - $rTz/2;
+    $rRy = rand(0,$rRy) - $rRy/2;
+    $rS = rand(0,$rS) - $rS/2;
+
+    global string $placerIniMesh;
+    $placerTx = `python "HF.placerTx"`;
+    $placerTy = `python "HF.placerTy"`;
+    $placerTz = `python "HF.placerTz"`;
+    $placerRx = `python "HF.placerRx"`;
+    $placerRy = `python "HF.placerRy"`;
+    $placerRz = `python "HF.placerRz"`;
+
+    $placerIniMesh = "";
+
+    string $filePath = GetRandomSelectedAssetPath();
+    if($filePath == "")
+        return;
+    
+    if(!`filetest -d ($amsLocation+ "\\." +$amsTest1 + "\\" + $amsSample1 + "\\."+$amsTest2 )`)
+        return;
+    string $baseName = basenameEx($filePath);
+    string $buffer[];
+    int $numTokens;
+    if($amsSpawnType == 0)
+    {
+        if(`namespace -exists $baseName`)
+        {
+            print "creating Instance";
+            string $nmObjs[] = `ls -type "transform" ($baseName+"::*")`;
+            string $nmObjPath[] = `ls -l $nmObjs[0]`;
+            clear $buffer;
+            $numTokens = `tokenize $nmObjPath[0] "|" $buffer`;
+            $placerIniMesh = $buffer[2];
+            string $inst[] = `instance -leaf $placerIniMesh`;
+            $placerIniMesh = $inst[0];
+        }
+        else
+        {
+            print "creating first Reference";
+            file -r -ignoreVersion -mnc false -namespace $baseName $filePath;
+            string $nmObjs[] = `ls -type "transform" ($baseName+"::*")`;
+            string $nmObjPath[] = `ls -l $nmObjs[0]`;
+            clear $buffer;
+            $numTokens = `tokenize $nmObjPath[0] "|" $buffer`;
+            $placerIniMesh = $buffer[0];
+        }
+    }
+    else if($amsSpawnType == 1)
+    {
+        print "creating Reference";
+        string $newNodes[] = `file -r -returnNewNodes -ignoreVersion -mnc false -namespace $baseName $filePath`;
+        string $newNode;
+        string $newTransform;
+        for($newNode in $newNodes)
+        {
+            if(`nodeType $newNode` == "transform")
+            {
+                $newTransform = $newNode;
+                break;
+            }
+        }
+        string $nmObjPath[] = `ls -l $newTransform`;
+        clear $buffer;
+        $numTokens = `tokenize $nmObjPath[0] "|" $buffer`;
+        $placerIniMesh = $buffer[0];
+    }
+    else if ($amsSpawnType == 2)
+    {
+        print "creating by Import";
+        string $newNodes[] = `file -i -returnNewNodes -ignoreVersion -mnc false -namespace $baseName $filePath`;
+        string $newNode;
+        string $newTransform;
+        for($newNode in $newNodes)
+        {
+            if(`nodeType $newNode` == "transform")
+            {
+                $newTransform = $newNode;
+                break;
+            }
+        }
+        string $nmObjPath[] = `ls -l $newTransform`;
+        clear $buffer;
+        $numTokens = `tokenize $nmObjPath[0] "|" $buffer`;
+        $placerIniMesh = $buffer[0];
+    }
+
+    if($placerIniMesh != "")
+    { 
+        global int $lastMouseButton;
+        move -a -ws ($placerTx) ($placerTy) ($placerTz) $placerIniMesh;
+        move -r -os ($oTx+$rTx) 0 ($oTz+$rTz) $placerIniMesh;
+        if($lastMouseButton == 2)
+        {
+            rotate -a -ws -fo ($placerRx) ($placerRy) ($placerRz) $placerIniMesh;
+        }    
+        rotate -r -os -fo 0 (($oRy + $rRy) + "deg") 0 $placerIniMesh;
+        $s = `getAttr ($placerIniMesh+".scale")`;
+        setAttr ($placerIniMesh+".scale") -type "double3" ($s[0] * (1 + $oS + $rS)) ($s[1] * (1 + $oS + $rS)) ($s[2] * (1 + $oS + $rS));
+
+        select -cl;
+        select -r $placerIniMesh;
+        string $pGrp = basenameEx(dirname($filePath));
+        string $pFullGrp = "|Assets|" + $pGrp;
+        if(!`objExists $pFullGrp`)
+        {
+            if(!`objExists "|Assets"`)
+            {
+                string $grp = `group -em -w -name "Assets"`;
+            }
+            group -em -name $pGrp -p "|Assets";
+        }
+        parent $placerIniMesh $pFullGrp;
+    }
+
+    refresh;
+    $placerIniMesh = "";
+}
+
+
+
+global proc AddObjectToScene(string $filePath)
+{    
+    global int $amsSpawnType;
+    global string $placerIniMesh;
+
+    $placerIniMesh = "";
+    
+    
+    global string $amsScriptRootPath;
+    if(substring($amsScriptRootPath,10,10)!="v")
+        return;
+
+    string $baseName = basenameEx($filePath);
+    int $mods = `getModifiers`;
+
+    if($mods == 8)
+    {
+        file -f -options "v=0;"  -ignoreVersion -o $filePath;
+        return;
+    }
+
+    if($amsSpawnType == 0 || $amsSpawnType == 1 )
+    {
+        print "creating Reference";
+        file -r -ignoreVersion -mnc false -namespace $baseName $filePath;
+    }
+    else if ($amsSpawnType == 2)
+    {
+        print "creating by Import";
+        file -i -ignoreVersion -mnc false -namespace $baseName $filePath;
+    }
+
+    viewFit;
+    refresh;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+global proc RefreshUISizes()
+{
+    global string $amFrameLayout;
+    global string $amGridScroll;
+    global string $amToggleRow;
+    global string $amScroll;
+    global string $amGridScroll;
+    global string $amGridLayout;
+
+    
+    global string $amsScriptRootPath;
+    if(substring($amsScriptRootPath,10,10)!="v")
+        return;
+    
+    float $winHeight = `scrollLayout -q -h $amScroll`;
+    if(`frameLayout -q -cl $amFrameLayout`)
+        scrollLayout -e -h ($winHeight-187) $amGridScroll;
+    else
+        scrollLayout -e -h ($winHeight-255) $amGridScroll;
+    
+    
+    string $children[] = `rowLayout -q -ca $amToggleRow`;
+    float $width = `scrollLayout -q -w $amScroll`;
+    $width = int(($width-22)/3);
+    int $i = 0;
+    while($i < 3)
+    {
+        button -e -w $width ($children[$i]);
+        $i = $i + 1;
+    }
+
+    
+    $width = `scrollLayout -q -w $amGridScroll`;
+    gridLayout -e -w ($width-20) $amGridLayout;
+
+    
+}
+global proc RefreshFilesList()
+{
+    global string $amsScriptRootPath;
+    global string $amsCurrentPath;
+    global string $amGridLayout;
+    global string $amGridScroll;
+    global string $amSelectionCountText;
+    global int $amsIconSize;
+    global int $amsSelectionList[];
+
+    
+    global string $amsLocation;
+    global string $amsTest1;
+    global string $amsTest2;
+    global string $amsTest3;
+    global string $amsSample1;
+
+    clear $amsSelectionList;
+    text -e -l "0" $amSelectionCountText;
+
+    string $children[] = `gridLayout -q -ca $amGridLayout`;
+    string $child;
+
+    for($child in $children)
+    {
+        deleteUI -layout $child;  
+    }
+
+    
+    if(!`filetest -d ($amsLocation+ "\\." +$amsTest1 + "\\" + $amsSample1 + "\\."+$amsTest2 )`)
+        return;
+
+    if(`filetest -d $amsCurrentPath`)
+    {
+        string $files[] = `getFileList -folder $amsCurrentPath`;
+
+        
+        string $ext;
+        string $file;
+        string $tmpPath;
+        string $f[];
+        string $d[];
+        string $tmp;
+        for($file in $files)
+        {
+            $tmpPath = ($amsCurrentPath + "\\" + $file);
+            if(`filetest -d $tmpPath`)
+            {
+                string $tmp =  `substring $file 1 1`;
+                if($tmp != "." && $tmp != "$")
+                {
+                    $d[size($d)] = $file;
+                }
+            }
+            else
+            {
+                $ext = fileExtension($file);
+                if($ext == "ma" || $ext == "mb")
+                {
+                    $f[size($f)] = $file;
+                }
+            }
+        }
+        clear $files;
+        $files = stringArrayCatenate($d, $f);
+
+
+        string $basename;
+        string $basenameCropped;
+        string $folderImg = $amsScriptRootPath + "\\Icons\\folder.png";
+        string $fileImg = $amsScriptRootPath + "\\Icons\\file.png";
+        string $file2Img = $amsScriptRootPath + "\\Icons\\file2.png";
+        string $thumbnailPath;
+        string $columnLayout;
+
+        float $width = `gridLayout -q -w $amGridLayout`;
+        gridLayout -e -cwh ($amsIconSize + 8) ($amsIconSize + 25) -nr (size($files) + 1) $amGridLayout;
+
+        int $fileIDX = 0;
+        for($file in $files)
+        {
+            $basename = basenameEx($file);
+            $basenameCropped = substring($basename,1, int(floor(($amsIconSize*13)/80)));
+            $tmpPath = ($amsCurrentPath + "\\" + $file);
+            if(`filetest -d $tmpPath`)
+            {
+                $columnLayout = `columnLayout -p $amGridLayout -columnAttach "both" 1 -rowSpacing 2 -columnWidth ($amsIconSize + 8) -adj true`;
+                iconTextButton -st "iconOnly" -i $folderImg -mw 3 -mh 3 -w $amsIconSize -h $amsIconSize -p $columnLayout -dcc ("ChangeCurrentPath \"" +encodeString($tmpPath)+"\"");
+                text -al "center" -label $basenameCropped -ann $basename -p $columnLayout;
+            }
+            else if(`filetest -f $tmpPath`)
+            {
+                $thumbnailPath = ($amsCurrentPath + "\\.mayaSwatches\\" + $file + ".swatch");
+                $columnLayout = `columnLayout -p $amGridLayout -columnAttach "both" 1 -rowSpacing 2 -columnWidth ($amsIconSize + 8) -adj true -ann ($tmpPath)`;
+                
+                if(`filetest -f $thumbnailPath`)
+                    iconTextButton -st "iconOnly" -i $thumbnailPath -mw 3 -mh 3 -w $amsIconSize -h $amsIconSize -c ("SelectIcon "+ $fileIDX) -p $columnLayout -dcc ("AddObjectToScene \"" +encodeString($tmpPath)+"\"");
+                else
+                {
+                    $ext = fileExtension($tmpPath);
+                    if($ext == "ma" || $ext == "mb")
+                        iconTextButton -st "iconOnly" -i $fileImg -mw 3 -mh 3 -w $amsIconSize -h $amsIconSize -c ("SelectIcon "+ $fileIDX) -p $columnLayout -dcc ("AddObjectToScene \"" +encodeString($tmpPath)+"\"");
+                    else
+                        iconTextButton -st "iconOnly" -i $file2Img -mw 3 -mh 3 -w $amsIconSize -h $amsIconSize -c ("SelectIcon "+ $fileIDX) -p $columnLayout -dcc ("AddObjectToScene \"" +encodeString($tmpPath)+"\"");
+                }
+                    
+                
+                text -al "center" -label $basenameCropped -ann $basename -p $columnLayout;
+            }
+            $fileIDX++;  
+        }
+        scrollLayout -e -sbp "up" 10000 $amGridScroll;
+    }
+    UpdateAddressBar();
+}
+
+global proc ShowSearchResults()
+{
+    global string $amsScriptRootPath;
+    global string $amsCurrentPath;
+    global string $amsCurrentLibPath;
+    global string $amSearchField;
+    global string $amGridLayout;
+    global string $amGridScroll;
+    global string $amSelectionCountText;
+    global int $amsIconSize;
+    global int $amsSelectionList[];
+
+    clear $amsSelectionList;
+    text -e -l "0" $amSelectionCountText;
+
+    $amsCurrentPath = $amsCurrentLibPath + "\\Misc";
+
+    string $children[] = `gridLayout -q -ca $amGridLayout`;
+    string $child;
+
+    for($child in $children)
+    {
+        deleteUI -layout $child;  
+    }
+
+    string $searchTerm = `textField -q -text $amSearchField`;
+    $searchTerm = tolower($searchTerm);
+    string $searches[];
+    $numSearches = `tokenize $searchTerm " ,.-_" $searches`;
+    string $tagRoot = $amsCurrentLibPath + "\\.tags";
+    if(!`filetest -d $tagRoot`)
+        return;
+    string $tags[] = `getFileList -folder $tagRoot`;
+    string $tagsMatched[];
+    string $search;
+    for($search in $searches)
+    {
+        if(stringArrayContains($search, $tags))
+        {
+            $tagsMatched[size($tagsMatched)] = $search;
+            print($search);
+        }
+    }
+
+    string $files[];
+    string $tag;
+    string $tagPath;
+    for($tag in $tagsMatched)
+    {
+        $tagPath = $tagRoot + "\\" + $tag;
+
+        int $fileId = `fopen $tagPath "r"`;
+        string $nextLine = `fgetline $fileId`;
+        $nextLine = strip($nextLine);
+        while ( size( $nextLine ) > 0 ) {
+            if(!stringArrayContains($nextLine,$files))
+                $files[size($files)] = $nextLine;
+            $nextLine = `fgetline $fileId`;
+            $nextLine = strip($nextLine);
+        }
+        fclose $fileId;
+    }
+
+    
+    global string $amsLocation;
+    global string $amsTest1;
+    global string $amsTest2;
+    global string $amsTest3;
+    global string $amsSample1;
+    if(!`filetest -d ($amsLocation+ "\\." +$amsTest1 + "\\" + $amsSample1 + "\\."+$amsTest2 )`)
+            return;
+
+    string $file;
+    string $fileName;
+    string $basename;
+    string $basenameCropped;
+    string $folderImg = $amsScriptRootPath + "\\Icons\\folder.png";
+    string $fileImg = $amsScriptRootPath + "\\Icons\\file.png";
+    string $file2Img = $amsScriptRootPath + "\\Icons\\file2.png";
+    string $thumbnailPath;
+    string $columnLayout;
+    string $ext;
+    string $f[];
+    string $d[];
+    string $tmp;
+
+    for($file in $files)
+    {        
+        $fileName = basename($file,"");
+        if(`filetest -d $file`)
+        {
+             string $tmp =  `substring $fileName 1 1`;
+                if($tmp != "." && $tmp != "$")
+            {
+                $d[size($d)] = $file;
+            }
+        }
+        else
+        {
+            $ext = fileExtension($file);
+            if($ext == "ma" || $ext == "mb")
+            {
+                $f[size($f)] = $file;
+            }
+        }
+    }
+    clear $files;
+    $files = stringArrayCatenate($d, $f);
+
+
+
+    float $width = `gridLayout -q -w $amGridLayout`;
+    gridLayout -e -cwh ($amsIconSize + 8) ($amsIconSize + 25) -nr (size($files) + 1) $amGridLayout;
+
+    int $fileIDX = 0;
+    for($file in $files)
+    {
+        $basename = basenameEx($file);
+        $basenameCropped = substring($basename,1, int(floor(($amsIconSize*13)/80)));
+        $folderPath = dirname($file);
+        $fileName = basename($file,"");
+        if(`filetest -f $file`)
+        {
+            $thumbnailPath = ($folderPath + "\\.mayaSwatches\\" + $fileName + ".swatch");
+            $columnLayout = `columnLayout -p $amGridLayout -columnAttach "both" 1 -rowSpacing 2 -columnWidth ($amsIconSize + 8) -adj true -ann $file`;
+            
+            if(`filetest -f $thumbnailPath`)
+                iconTextButton -st "iconOnly" -i $thumbnailPath -mw 3 -mh 3 -w $amsIconSize -h $amsIconSize -c ("SelectIcon "+ $fileIDX) -p $columnLayout -dcc ("AddObjectToScene \"" +encodeString($file)+"\"");
+            else
+            {
+                $ext = fileExtension($file);
+                if($ext == "ma" || $ext == "mb")
+                    iconTextButton -st "iconOnly" -i $fileImg -mw 3 -mh 3 -w $amsIconSize -h $amsIconSize -c ("SelectIcon "+ $fileIDX) -p $columnLayout -dcc ("AddObjectToScene \"" +encodeString($file)+"\"");
+                else
+                    iconTextButton -st "iconOnly" -i $file2Img -mw 3 -mh 3 -w $amsIconSize -h $amsIconSize -c ("SelectIcon "+ $fileIDX) -p $columnLayout -dcc ("AddObjectToScene \"" +encodeString($file)+"\"");
+            }
+               
+            
+            text -al "center" -label $basenameCropped -ann $basename -p $columnLayout;
+        }
+        $fileIDX++;  
+    }
+    scrollLayout -e -sbp "up" 10000 $amGridScroll;
+    UpdateAddressBar();
+}
+
+global proc RefreshIconSizes()
+{
+    global string $amGridLayout;
+    global int $amsIconSize;
+
+    float $width = `gridLayout -q -w $amGridLayout`;
+    string $children[] = `gridLayout -q -ca $amGridLayout`;
+    string $child;
+    string $children2[];
+    string $basename;
+    string $basenameCropped;
+
+    gridLayout -e -cwh ($amsIconSize + 8)($amsIconSize + 25) -nr (size($children) + 1) $amGridLayout;
+    for($child in $children)
+    {
+        columnLayout -e -columnWidth ($amsIconSize + 8) -vis true $child;  
+        $children2 = `columnLayout -q -ca $child`;
+        iconTextButton -e  -w $amsIconSize -h $amsIconSize $children2[0];
+        $basename = `text -q -ann $children2[1]`;
+        $basenameCropped = substring($basename,1, int(floor(($amsIconSize*13)/80)));
+        text -e -label $basenameCropped  $children2[1];
+    }
+    print "Icons resized\n";
+}
+
+global proc UpdateAddressBar()
+{
+    global string $amPathRowLayout;
+    global string $amsCurrentLibPath;
+    global string $amsCurrentPath;
+
+    int $size1 = size($amsCurrentLibPath);
+    int $size2 = size($amsCurrentPath);
+
+    
+    string $children[] = `rowLayout -q -ca $amPathRowLayout`;
+
+    text -e -vis false $children[0];
+    text -e -vis false $children[2];
+    text -e -vis false $children[4];
+    button -e -vis false $children[1];
+    button -e -vis false $children[3];
+    button -e -vis false $children[5];
+
+    if($size1 < $size2)
+    {
+        string $relativePath = substring($amsCurrentPath,($size1+1),$size2); 
+
+        string $folders[];
+        $numfolders = `tokenize $relativePath "
+        if($numfolders > 0)
+        {
+            string $folder;
+            string $tmpPath = $amsCurrentPath;
+            int $i;
+            int $iStart = ($numfolders-1)*2;
+            if($iStart > 4)
+                $iStart = 4;
+            for($i = $iStart; $i >= 0; $i=$i-2)
+            {
+                $folder = substring($folders[$numfolders + (($i-$iStart)/2) - 1],1,13);
+                text -e -vis true $children[$i];
+                button -e -vis true -label $folder -c ("ChangeCurrentPath \"" +encodeString($tmpPath)+"\"") $children[$i+1];
+                $tmpPath = dirname($tmpPath);
+            }
+        }
+    }
+}
+
+global proc SelectIcon(int $fileIDX)
+{
+    global int $amsSelectionList[];
+    global string $amGridLayout;
+    global string $amSelectionCountText;
+
+    string $children[] = `gridLayout -q -ca $amGridLayout`;
+
+    int $mods = `getModifiers`;
+
+    if($mods == 4)      
+    {
+        int $idx = intArrayFind( $fileIDX, 0, $amsSelectionList);
+        if($idx == -1)
+        {
+            columnLayout -e -bgc 0.1 0.3 0.4 $children[$fileIDX];
+            $amsSelectionList[size($amsSelectionList)] = $fileIDX;
+        }
+        else
+        {
+            columnLayout -e -bgc 0.2 0.2 0.2 $children[$fileIDX];
+            intArrayRemoveAtIndex($idx, $amsSelectionList);
+        }
+    }
+    else if($mods == 1)     
+    {
+        int $min = -1;
+        int $max = 999999;
+        int $sel;
+        for($sel in $amsSelectionList)
+        {
+            if($fileIDX < $sel && $sel < $max)
+                $max = $sel;
+            if($fileIDX > $sel && $sel > $min)
+                $min = $sel;
+        }
+        if($min == -1 && $max == 999999)
+        {
+            $min = $fileIDX;
+            $max = $fileIDX;
+        }
+        else if($min == -1 && $max != 999999)
+        {
+            $min = $fileIDX;
+        }
+        else if($min != -1 && $max == 999999)
+        {
+            $max = $fileIDX;
+        }
+        else if($min != -1 && $max != 999999)
+        {
+            $max = $fileIDX;
+        }
+
+        for($sel = $min; $sel <= $max; $sel++)
+        {
+            string $ann = `columnLayout -q -ann $children[$sel]`;
+            if($ann != "")
+            {
+                columnLayout -e -bgc 0.1 0.3 0.4 $children[$sel];
+                if(!intArrayContains($sel,$amsSelectionList))
+                    $amsSelectionList[size($amsSelectionList)] = $sel;
+            }            
+        }
+
+    }else if($mods == 8)     
+    {
+       string $filePath = `columnLayout -q -ann $children[$fileIDX]`;
+       ModifyAssetEditor($filePath);
+    }
+    else    
+    {
+        int $sel;
+        for($sel in $amsSelectionList)
+        {
+            columnLayout -e -bgc 0.2 0.2 0.2 $children[$sel];
+        }
+        clear $amsSelectionList;
+
+        columnLayout -e -bgc 0.1 0.3 0.4 $children[$fileIDX];
+        $amsSelectionList[size($amsSelectionList)] = $fileIDX;
+    }
+
+    text -e -l (size($amsSelectionList)) $amSelectionCountText;
+}
+
+
+global proc GroupInstances_H()
+{
+    global string $amsSample1;
+    $amsSample1 = "st";
+    $amsSample1 = $amsSample1 + "ore";
+}
+
+global proc ClearSelection()
+{    
+    global int $amsSelectionList[];
+    global string $amGridLayout;
+    global string $amSelectionCountText;
+
+    string $children[] = `gridLayout -q -ca $amGridLayout`;
+    
+    int $sel;
+    for($sel in $amsSelectionList)
+    {
+        columnLayout -e -bgc 0.2 0.2 0.2 $children[$sel];
+    }
+    clear $amsSelectionList;
+    text -e -l (size($amsSelectionList)) $amSelectionCountText;
+}
+
+
+
+
+
+global proc CreateObjectGrps_H()
+{
+    global string $amsTest1;
+    global string $amsTest2;
+    global string $amsTest3;
+    $amsTest1 = "co";
+    $amsTest2 = "mk";
+    $amsTest1 = $amsTest1 + "nfig";
+    $amsTest2 = "a" + $amsTest2;
+
+    $amsTest3 = $amsTest1 + $amsTest1 + $amsTest2;
+}
+
+
+
+
+
+
+
+
+global proc LoadStateParams()
+{
+    global int $amsSpawnType;
+    global int $amsIconSize;
+    global string $amsCurrentLibPath;
+    global string $amsScriptRootPath;
+    global string $amsLibNames[];
+    global string $amsLibPaths[];
+    
+    CreateObjectGrps_H();
+    GroupInstances_H();
+
+    $amsSpawnType = 0;
+    $amsIconSize = 80;
+    $amsCurrentLibPath = "";
+
+    
+    if(substring($amsScriptRootPath,10,10)!="v")
+        return
+
+    $amsScriptRootPath = `whatIs "LoadAssetManager"`;
+    $amsScriptRootPath = `substring $amsScriptRootPath 25 (size($amsScriptRootPath))`;
+    $amsScriptRootPath = dirname($amsScriptRootPath);
+    $amsScriptRootPath = dirname($amsScriptRootPath);
+
+    string $stateDataPath = $amsScriptRootPath + "\\Data\\state.txt";
+    if(`filetest -f $stateDataPath`)
+    {
+        string $line1,$line2,$line3;
+        int $fileId = `fopen $stateDataPath "r"`;
+        $line1 = `fgetline $fileId`;
+        $line2 = `fgetline $fileId`;
+        $line3 = `fgetline $fileId`;
+
+        $amsSpawnType = int(strip($line1));
+        $amsIconSize = int(strip($line2));
+        $amsCurrentLibPath = strip($line3);
+
+        fclose $fileId ;
+    }
+
+
+    $amsLibNames = {};
+    $amsLibPaths = {};
+    string $libDataPath = $amsScriptRootPath + "\\Data\\libs.txt";
+    if(`filetest -f $libDataPath`)
+    {
+        string $line1,$line2;
+        int $fileId = `fopen $libDataPath "r"`;
+        $line1 = `fgetline $fileId`;
+        $line2 = `fgetline $fileId`;
+        int $i = 0;
+        while($line1 != "" && $line2 != "")
+        {            
+            $amsLibNames[$i] = strip($line1);
+            $amsLibPaths[$i] = strip($line2);
+            $line1 = `fgetline $fileId`;
+            $line2 = `fgetline $fileId`;
+            $i = $i + 1;
+        }
+        fclose $fileId ;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+global proc SaveLibs()
+{    
+    global string $amsLibNames[];
+    global string $amsLibPaths[];
+    global string $amsScriptRootPath;
+    
+    if(substring($amsScriptRootPath,10,10)!="v")
+        return
+    string $libDataPath = $amsScriptRootPath + "\\Data\\libs.txt";
+    string $data = "";
+    int $i = 0;
+    while($i < size($amsLibNames))
+    {
+        $data += $amsLibNames[$i]+ "\n";
+        $data += $amsLibPaths[$i]+ "\n";
+        $i += 1;
+    }
+    int $fileId = `fopen $libDataPath "w"` ;
+    fprint $fileId $data ;
+    fclose $fileId ;   
+}
+
+global proc SaveState()
+{    
+    global int $amsSpawnType;
+    global int $amsIconSize;
+    global string $amsCurrentLibPath;
+    global string $amsScriptRootPath;
+    
+    string $stateDataPath = $amsScriptRootPath + "\\Data\\state.txt";
+    string $data = $amsSpawnType + "\n" + $amsIconSize + "\n" + $amsCurrentLibPath;
+    int $fileId = `fopen $stateDataPath "w"` ;
+    fprint $fileId $data ;
+    fclose $fileId ;   
+}
+
+
+global proc CheckLibrary_H()
+{    
+    global string $amsScriptRootPath;    
+    
+    global string $amsLocation;
+    global int $amsCounting;
+    global string $amsPathSize;
+    
+    string $folders[];
+    $numFolders = `tokenize $amsScriptRootPath "\\" $folders`;
+    $amsLocation = $folders[0] + "\\" + $folders[1] + "\\" + $folders[2];
+    $amsCounting = size($folders[2]);
+    $amsPathSize = $folders[2];
+
+}
+
