@@ -25,8 +25,10 @@ namespace GumroadRegistration
         private static int uses = 0;
         private static int quantity = 0;
         private static int maxUses = 0;
+        private static int maxUsesPerLicense = 3;
         private static string UserFolder = "";
         private static string AMK_Dir = "";
+        private static string[] HiddenKeys = {"S89C7AD0","8HG056DG","K9W7FS09","Y204IH93","F83C28GH","1VD9ED96","V0Y2F86F","32IB56FS","7TF55DFT","TY8Y8U0P","VI8953RT","L053FT2A","8G4KLC89","Y9C7GH15","P0P3Y9SQ"};
 
 
         static void Main(string[] args)
@@ -40,6 +42,25 @@ namespace GumroadRegistration
 
         static async void SendPostRequest()
         {
+            //License key decrypt
+            string[] KeyParts = LicenseKey.Split('-');
+            int idx = 0;
+            foreach(string Part in KeyParts)
+            {
+                idx++;
+                if(HiddenKeys.Contains(Part))
+                {
+                    KeyParts = KeyParts.Where(val => val != Part).ToArray();
+                    break;
+                }
+                if(idx == KeyParts.Length)
+                {
+                    idx = 3;
+                }
+            }
+            maxUsesPerLicense = idx;
+            LicenseKey = string.Join("-", KeyParts);
+
             var parameters = new Dictionary<string, string> { { "product_permalink", ProductID }, { "license_key", LicenseKey } };
             var formData = new FormUrlEncodedContent(parameters);
             var response = await client.PostAsync(URL, formData);
@@ -65,10 +86,10 @@ namespace GumroadRegistration
             {
                 uses = responseObj.uses;
                 quantity = responseObj.purchase.quantity;
-                maxUses = quantity * 3;
+                maxUses = quantity * maxUsesPerLicense;
                 if(uses > maxUses)
                 {
-                    Console.WriteLine("This License key exceeded it's maximum number of uses, try another one.....");
+                    Console.WriteLine("This License key exceeded it's maximum number of uses("+maxUses+"), try another one.....");
                     responseString = "{'success':false}";
                     isValid = false;
                     LicenseKey = Console.ReadLine();

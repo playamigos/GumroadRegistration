@@ -42,14 +42,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="GumroadRegistration.exe" size="11696">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="GumroadRegistration.exe" size="13232">
       <assemblyIdentity name="GumroadRegistration" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>ECbM7yF42WDo3/byLc0Ua8Ir+1EHk+0mm7wpEKlFs5s=</dsig:DigestValue>
+        <dsig:DigestValue>m7rfgGNM6im57X82b5BcPxtymr4TGOqQ8FHAAnHNQrQ=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>

@@ -12,3 +12,17 @@ C:\Users\vivek\Desktop\GumroadRegistration\GumroadRegistration\GumroadRegistrati
 C:\Users\vivek\Desktop\GumroadRegistration\GumroadRegistration\GumroadRegistration\bin\Debug\GumroadRegistration.application
 C:\Users\vivek\Desktop\GumroadRegistration\GumroadRegistration\GumroadRegistration\obj\Debug\GumroadRegistration.exe.manifest
 C:\Users\vivek\Desktop\GumroadRegistration\GumroadRegistration\GumroadRegistration\obj\Debug\GumroadRegistration.application
+D:\GumroadRegistration\GumroadRegistration\bin\Debug\GumroadRegistration.exe.config
+D:\GumroadRegistration\GumroadRegistration\bin\Debug\GumroadRegistration.exe.manifest
+D:\GumroadRegistration\GumroadRegistration\bin\Debug\GumroadRegistration.application
+D:\GumroadRegistration\GumroadRegistration\bin\Debug\GumroadRegistration.exe
+D:\GumroadRegistration\GumroadRegistration\bin\Debug\GumroadRegistration.pdb
+D:\GumroadRegistration\GumroadRegistration\bin\Debug\Newtonsoft.Json.dll
+D:\GumroadRegistration\GumroadRegistration\bin\Debug\Newtonsoft.Json.xml
+D:\GumroadRegistration\GumroadRegistration\obj\Debug\GumroadRegistration.csproj.AssemblyReference.cache
+D:\GumroadRegistration\GumroadRegistration\obj\Debug\GumroadRegistration.csproj.CoreCompileInputs.cache
+D:\GumroadRegistration\GumroadRegistration\obj\Debug\GumroadRegistration.exe.manifest
+D:\GumroadRegistration\GumroadRegistration\obj\Debug\GumroadRegistration.application
+D:\GumroadRegistration\GumroadRegistration\obj\Debug\GumroadRegistration.csproj.CopyComplete
+D:\GumroadRegistration\GumroadRegistration\obj\Debug\GumroadRegistration.exe
+D:\GumroadRegistration\GumroadRegistration\obj\Debug\GumroadRegistration.pdb
