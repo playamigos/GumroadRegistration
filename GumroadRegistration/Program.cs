@@ -18,7 +18,7 @@ namespace GumroadRegistration
 
         //Ini Gumroad data
         private static string URL = "https://api.gumroad.com/v2/licenses/verify";
-        private static string ProductID = "xbdJjO";
+        private static string ProductID = "NLIib";
         private static string LicenseKey = "";
         private static bool isValid = false;
         private static int attempt = 0;
